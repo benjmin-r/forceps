@@ -45,22 +45,10 @@ module Forceps
       end
 
       def perform_copy(remote_object)
-        copied_object = local_copy_with_simple_attributes(remote_object)
-        copied_remote_objects[remote_object] = copied_object
+        copied_object = find_or_clone_local_copy_with_simple_attributes(remote_object)
+        copied_remote_objects[obj_ident(remote_object)] = copied_object
         copy_associated_objects(copied_object, remote_object) unless was_reused?(copied_object)
         copied_object
-      end
-
-      def local_copy_with_simple_attributes(remote_object)
-        if should_reuse_local_copy?(remote_object)
-          find_or_clone_local_copy_with_simple_attributes(remote_object)
-        else
-          create_local_copy_with_simple_attributes(remote_object)
-        end
-      end
-
-      def should_reuse_local_copy?(remote_object)
-        finders_for_reusing_classes.include?(remote_object.class.base_class)
       end
 
       def finders_for_reusing_classes
@@ -89,6 +77,8 @@ module Forceps
       def finder_for_remote_object(remote_object)
         finder = finders_for_reusing_classes[remote_object.class.base_class]
         finder = build_attribute_finder(remote_object, finder) if finder.is_a? Symbol
+        finder = lambda { |o| o.class.base_class.find_by(id: remote_object.id) } unless finder
+
         finder
       end
 
