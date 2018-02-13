@@ -32,15 +32,19 @@ module Forceps
       end
 
       def copy(remote_object)
-        copy_associated_objects_in_belongs_to(remote_object) unless copied_remote_objects[remote_object]
+        copy_associated_objects_in_belongs_to(remote_object) unless copied_remote_objects[obj_ident(remote_object)]
         cached_local_copy(remote_object) || perform_copy(remote_object)
       end
 
       private
 
+      def obj_ident(remote_object)
+        "<#{remote_object.class.base_class.name} - #{remote_object.id}>"
+      end
+
       def cached_local_copy(remote_object)
-        cached_object = copied_remote_objects[remote_object]
-        debug "#{as_trace(remote_object)} from cache..." if cached_object
+        cached_object = copied_remote_objects[obj_ident(remote_object)]
+        debug "#{obj_ident(remote_object)} from cache..." if cached_object
         cached_object
       end
 
@@ -90,7 +94,7 @@ module Forceps
       end
 
       def create_local_copy_with_simple_attributes(remote_object)
-        debug "#{as_trace(remote_object)} copying..."
+        debug "#{obj_ident(remote_object)} copying..."
 
         base_class = base_local_class_for(remote_object)
 
@@ -166,7 +170,7 @@ module Forceps
       end
 
       def copy_simple_attributes(target_local_object, source_remote_object)
-        debug "#{as_trace(source_remote_object)} reusing..."
+        debug "#{obj_ident(source_remote_object)} reusing..."
         # update_columns skips callbacks too but not available in Rails 3
         copy_attributes(target_local_object, simple_attributes_to_copy(source_remote_object))
         target_local_object.save!(validate: false)
@@ -182,10 +186,6 @@ module Forceps
 
       def decrease_level
         @level -= 1
-      end
-
-      def as_trace(remote_object)
-        "<#{remote_object.class.base_class.name} - #{remote_object.id}>"
       end
 
       def debug(message)
