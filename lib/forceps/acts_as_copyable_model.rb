@@ -151,7 +151,7 @@ module Forceps
       end
 
       def disable_all_callbacks_for(base_class)
-        [:create, :save, :update, :validate, :touch].each { |callback| base_class.reset_callbacks callback }
+        [:create, :save, :update, :validate, :touch, :commit].each { |callback| base_class.reset_callbacks callback }
       end
 
       def simple_attributes_to_copy(remote_object)
@@ -171,7 +171,8 @@ module Forceps
 
       def copy_simple_attributes(target_local_object, source_remote_object)
         debug "#{obj_ident(source_remote_object)} reusing..."
-        # update_columns skips callbacks too but not available in Rails 3
+
+        disable_all_callbacks_for(target_local_object.class)
         copy_attributes(target_local_object, simple_attributes_to_copy(source_remote_object))
         target_local_object.save!(validate: false)
       end
